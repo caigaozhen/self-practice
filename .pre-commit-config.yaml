@@ -1,0 +1,21 @@
+repos:
+  # 1. 检查提交信息格式 (由 commitizen 提供，遵循 feat: xxx 格式)
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v4.8.2
+    hooks:
+      - id: commitizen
+        stages: [commit-msg]
+
+  # 2. 检查大文件 (防止误传数据集或模型权重)
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-added-large-files
+        args: ['--maxkb=1024']
+      - id: check-merge-conflict
+
+  # 3. 检查敏感密钥 (这里用 gitleaks 替代之前的 credguard，因为它在 pre-commit 框架里更通用)
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.24.0
+    hooks:
+      - id: gitleaks
