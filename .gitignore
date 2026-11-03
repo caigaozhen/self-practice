@@ -1,0 +1,59 @@
+# ============================================================
+#  仓库级忽略规则
+#  注意：.gitignore 只对"未跟踪"文件生效。
+#        已经 add 过的文件，必须 git rm --cached 摘出索引才会被忽略。
+# ============================================================
+
+# ---- 构建产物（不应入库，用 build_exe.bat 重新生成）
+dist/
+build/
+*.spec.bak
+out/
+
+# ---- Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ---- Node / 前端
+node_modules/
+unpackage/
+.npm/
+npm-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ---- IDE / 编辑器
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ---- 本地数据与日志（含个人隐私，坚决不提交）
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+*.log
+config.local.json
+
+# ---- 密钥 / 环境变量
+.env
+.env.*
+!.env.example
+
+# ---- 操作系统垃圾
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ---- 临时文件（截图、草稿）
+_*.png
+_*.jpg
+*.tmp

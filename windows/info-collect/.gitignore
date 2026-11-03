@@ -1,0 +1,45 @@
+# 忽略规则（项目级；通用规则见仓库根 .gitignore）
+#
+# 提醒：.gitignore 只对"未跟踪"文件生效。已经 add 过的文件即使写在这里也照旧提交，
+#       必须先 `git rm -r --cached <路径>` 把它从索引里摘出来。
+
+# ---- 构建产物
+# win/dist/ 是 PyInstaller 的输出目录（30MB 的 exe + 一堆 dll），属于交付物不属于源码。
+# 需要时跑 win/build_exe.bat 重新生成；要分发二进制请走 Releases，不要塞进 git。
+win/dist/
+win/build/
+
+# 保留 .spec：它是打包配置（源码），只有备份文件才忽略
+win/*.spec.bak
+
+# ---- Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# ---- uni-app / Node
+mobile/node_modules/
+mobile/dist/
+mobile/.hbuilderx/
+mobile/unpackage/
+npm-debug.log*
+
+# ---- 本地运行数据（含个人使用记录，绝不提交）
+*.db
+*.db-wal
+*.db-shm
+*.log
+
+# ---- IDE
+.idea/
+
+# ---- 操作系统垃圾文件
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# ---- 临时截图
+_*.png
+_shot.html

@@ -1,0 +1,26 @@
+{
+  "name": "infocollect-mobile",
+  "version": "1.0.0",
+  "private": true,
+  "description": "InfoCollect 手机端（uni-app · Vue3）",
+  "scripts": {
+    "dev:h5": "uni",
+    "build:h5": "uni build",
+    "dev:app": "uni -p app",
+    "build:app": "uni build -p app"
+  },
+  "dependencies": {
+    "@dcloudio/uni-app": "3.0.0-5030420261029001",
+    "@dcloudio/uni-app-plus": "3.0.0-5030420261029001",
+    "@dcloudio/uni-components": "3.0.0-5030420261029001",
+    "@dcloudio/uni-h5": "3.0.0-5030420261029001",
+    "vue": "3.4.21",
+    "vue-i18n": "^9.1.9"
+  },
+  "devDependencies": {
+    "@dcloudio/types": "^3.4.8",
+    "@dcloudio/uni-cli-shared": "3.0.0-5030420261029001",
+    "@dcloudio/vite-plugin-uni": "3.0.0-5030420261029001",
+    "vite": "5.2.8"
+  }
+}
