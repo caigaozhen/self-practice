@@ -61,6 +61,7 @@ v0.3 起，托盘启动时会自动体检：路径失效会弹通知，菜单里
 
 | 文档 | 内容 |
 |---|---|
+| `docs/windows开机自启选型.md` | **开机自启**：当前用的 Run 键方案详解、六个场景的操作步骤、其他方案对比与选型理由 |
 | `docs/requirements.md` | 需求分析：范围、功能/非功能需求、验收标准、追踪矩阵 |
 | `docs/database-design.md` | 数据库设计：本地 SQLite + 云端 Postgres、RLS、幂等 |
 | `docs/detailed-design.md` | 详细设计：模块、采样状态机、上报、自启、并发与异常 |
