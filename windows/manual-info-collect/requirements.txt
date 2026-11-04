@@ -1,0 +1,12 @@
+# ManualInfoCollect 的第三方依赖
+# 安装：py -3 -m pip install -r requirements.txt
+#
+# 为什么只有这一个依赖：
+#   除了日志用 loguru（比标准库 logging 少写一半代码，且自带轮转），
+#   其余全部用标准库（winreg / subprocess / pathlib / ctypes / sqlite3），无需安装。
+#
+# 注意：本项目要开机自启，依赖装到「系统环境」而非 .venv
+#   原因：自启写的是解释器绝对路径，.venv 容易被清理，一旦消失自启会静默失效。
+#   详见 V0.2/README.md 与项目根 README.md 的说明。
+
+loguru>=0.7.0

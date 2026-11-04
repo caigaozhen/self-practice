@@ -21,13 +21,14 @@ def main():
 #拼接启动命令
 def launcher_command():
     python = Path(sys.executable) # Path获取路径，sys.executable获取运行当前文件的脚本解释器的完整路径
+    # 这个地方使用pythonw.exe是为了隐藏窗口，不显示命令行窗口，其他跟python.exe没有区别
     exe = python.with_name("pythonw.exe") # 保留文件目录，只更换文件名
     if not exe.exists():
         exe = python
     script = Path(__file__).resolve() # 当前文件获取绝对路径
-    return f'"{exe}" "{script}" --run' # --run 自己指定，此时还没有指定
+    return f'"{exe}" "{script}" --run'
 
-# 写入用户注册表
+# 写入用户注册表，实现开机自启
 def install():
     cmd = launcher_command()
     # winreg是python自带的操作注册表的模块
@@ -41,10 +42,48 @@ def install():
     # cmd是要填写的值
     with winreg.CreateKeyEx(winreg.HKEY_CURRENT_USER, REG_RUN, 0, winreg.KEY_WRITE) as key:
         winreg.SetValueEx(key, APP_NAME, 0, winreg.REG_SZ, cmd)
+        print("安装成功")
 
-# main()
-# print(launcher_command())
-install()
+# 从注册表删除应用
+def uninstall():
+    try:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, REG_RUN, 0, winreg.KEY_WRITE) as key:
+            winreg.DeleteValue(key, APP_NAME)
+            print("删除成功")
+    except FileNotFoundError:
+        print("本来就没有安装，无需删除")
+
+# 检查应用是否安装
+def status():
+    expected = launcher_command()
+    try:
+        # 
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, REG_RUN) as key:
+            actual, _type = winreg.QueryValueEx(key, APP_NAME)
+    except FileNotFoundError:
+        actual = None
+
+    print(f"当前状态：{'已安装' if actual else '未安装'}")
+    if actual and actual != expected:
+        print("当前启动命令与预期启动命令不一致")
+        print("预期启动命令：", expected)
+        print("当前启动命令：", actual)
+
+
+if __name__ == "__main__":
+    # 解析命令行参数
+    cmd = sys.argv[1] if len(sys.argv) > 1 else ''
+    if cmd == '--run':
+        main()
+    elif cmd == '--uninstall':
+        uninstall()
+    elif cmd == '--install':
+        install()
+    elif cmd == '--status':
+        status()
+    else:
+        main()
+
 
 
 
