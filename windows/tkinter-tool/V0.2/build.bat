@@ -1,6 +1,6 @@
 @echo off
 REM ==========================================
-REM 双击本文件：把 app.py 打包成 dist\TimeLog.exe
+REM 双击本文件：把 app.py 打包成 dist\HardwareInfo.exe
 REM 前提：先装好 PyInstaller
 REM   py -3 -m pip install pyinstaller
 REM ==========================================
@@ -19,7 +19,7 @@ REM 开始打包
 REM   --noconsole  不弹黑色命令行窗口
 REM   --onefile    打成单个 exe
 REM   --name       指定产物名
-py -3 -m PyInstaller --noconsole --onefile --name TimeLog app.py
+py -3 -m PyInstaller --noconsole --onefile --name HardwareInfo app.py
 
 REM 失败就停住窗口，方便看报错
 if errorlevel 1 (
@@ -29,5 +29,5 @@ if errorlevel 1 (
 )
 
 echo.
-echo 完成：dist\TimeLog.exe
+echo 完成：dist\HardwareInfo.exe
 pause
