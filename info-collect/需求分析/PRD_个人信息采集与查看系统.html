@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PRD · 个人信息采集与查看系统 V1</title>
+<style>
+  :root {
+    --text: #1f2328; --muted: #59636e; --border: #d1d9e0;
+    --surface: #ffffff; --bg: #f6f8fa; --brand: #0f7b3f; --brand-soft: #e6f4ec;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.75 "PingFang SC", "Microsoft YaHei", system-ui, sans-serif; }
+  .page { max-width: 960px; margin: 0 auto; padding: 32px 20px 80px; }
+  header.doc { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 28px 32px; margin-bottom: 24px; }
+  h1 { font-size: 24px; margin: 0 0 8px; }
+  .meta { color: var(--muted); font-size: 13px; }
+  .meta span { margin-right: 16px; }
+  section { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px 32px; margin-bottom: 20px; }
+  h2 { font-size: 19px; margin: 0 0 14px; padding-bottom: 8px; border-bottom: 2px solid var(--brand-soft); }
+  h3 { font-size: 16px; margin: 22px 0 8px; }
+  h4 { font-size: 15px; margin: 16px 0 6px; color: var(--muted); }
+  p { margin: 8px 0; }
+  ul, ol { margin: 8px 0; padding-left: 24px; }
+  li { margin: 4px 0; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 14px; }
+  th, td { border: 1px solid var(--border); padding: 7px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--bg); font-weight: 600; white-space: nowrap; }
+  code { background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px; font-size: 13px; }
+  .tag { display: inline-block; background: var(--brand-soft); color: var(--brand); border-radius: 4px; font-size: 12px; padding: 1px 8px; margin-right: 6px; font-weight: 600; }
+  .tbd { background: #fff4e5; color: #9a5b00; }
+  .fr { border-left: 3px solid var(--brand); padding-left: 16px; margin: 18px 0; }
+  .fr h3 { margin-top: 0; }
+  .flow { background: var(--bg); border: 1px dashed var(--border); border-radius: 8px; padding: 12px 16px; font-size: 14px; color: var(--muted); }
+  .note { background: var(--brand-soft); border-radius: 8px; padding: 10px 16px; font-size: 14px; }
+  /* 概览页线框示意 */
+  .wire { display: flex; gap: 16px; flex-wrap: wrap; margin: 14px 0; }
+  .wire .phone { width: 300px; border: 2px solid var(--border); border-radius: 14px; padding: 12px; background: var(--bg); }
+  .wire .bar { height: 8px; border-radius: 4px; background: var(--border); margin: 6px 0; }
+  .wire .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px; margin: 8px 0; }
+  .wire .t { font-size: 13px; font-weight: 600; }
+  .wire .s { font-size: 12px; color: var(--muted); }
+  .wire .on { color: var(--brand); font-weight: 600; font-size: 12px; }
+  .wire .off { color: #9a5b00; font-weight: 600; font-size: 12px; }
+  .wire .mini { display:flex; justify-content: space-between; font-size: 12px; margin: 3px 0; }
+  .wire .mini b { font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="doc">
+  <h1>个人信息采集与查看系统 · 产品需求文档（PRD）</h1>
+  <div class="meta">
+    <span>版本：V1.0（草案，待评审）</span>
+    <span>日期：2026-11-12</span>
+    <span>作者：需求方 + AI 协作梳理</span>
+  </div>
+</header>
+
+<section>
+  <h2>1. 背景与目标</h2>
+  <p><b>问题：</b>个人同时使用 Windows 电脑和 Android 手机，但缺少一个统一的地方回答"我的设备现在怎么样、最近 30 天是怎么被使用的"——硬件负载、网络情况、开机时长、各软件使用了多久，这些信息分散在系统面板里，无法在手机上查看，也无法回溯。</p>
+  <p><b>产品响应：</b>在每台电脑（Windows）和手机（Android）上装采集端，按固定周期把数据推送到自己的服务器；用户在 Android App 上查看<b>所有已绑定设备</b>（多台电脑、多台手机）的实时状态、30 天历史趋势，并可导出数据。</p>
+  <h3>可观察的目标（V1 验收口径）</h3>
+  <ul>
+    <li>设备产生数据后 <b>5 分钟内</b>，在手机上可看到该数据点。</li>
+    <li>任一指标可回看 <b>最近 30 天</b> 的趋势曲线。</li>
+    <li>任一设备任一指标的一段数据可 <b>导出为文件</b> 并在手机其他应用中打开。</li>
+    <li>除本人外，<b>任何人无法查看或上传数据</b>。</li>
+  </ul>
+</section>
+
+<section>
+  <h2>2. 范围</h2>
+  <h3>P0（本期必须，构成完整旅程）</h3>
+  <ol>
+    <li>Windows 采集端安装、绑定（支持多台）、自动采集与推送。</li>
+    <li>Android App 采集本机硬件数据并推送（支持多台手机）。</li>
+    <li>服务器接收、鉴权、存储、30 天保留。</li>
+    <li>Android App 查看所有已绑定设备的实时概览。</li>
+    <li>历史趋势查询（24 小时 / 7 天 / 30 天）。</li>
+    <li>数据导出（CSV）。</li>
+  </ol>
+  <h3>明确不做（避免分歧）</h3>
+  <ul>
+    <li>微信小程序 —— <b>二期</b>。</li>
+    <li>macOS / Linux 采集端。</li>
+    <li>后台进程使用时长统计（只统计前台活跃软件）。</li>
+    <li>手机侧 App 使用时长统计（本期手机只采硬件数据）。</li>
+    <li>多用户、分享、协作。</li>
+    <li>主动告警推送（已确认不做）。</li>
+    <li>跨设备聚合视图（已确认不做，趋势只按单设备查看）。</li>
+  </ul>
+  <h3>核心旅程</h3>
+  <div class="flow">
+    首次：装机 → 电脑端生成绑定码 → 手机 App 输入绑定码 → 开始每 5 分钟上报；
+    <b>重复绑定流程可接入任意多台电脑/手机</b> → 手机打开 App 看到全部设备在线与实时指标 → 查看趋势 → 导出一段数据。<br>
+    恢复：断网期间数据缓存在本地，网络恢复后自动补推，不丢数据点。
+  </div>
+</section>
+
+<section>
+  <h2>3. 角色、对象与状态</h2>
+  <h3>角色</h3>
+  <table>
+    <tr><th>角色</th><th>说明</th><th>权限</th></tr>
+    <tr><td>主人（唯一用户）</td><td>设备的所有者本人</td><td>查看全部数据、导出、管理设备绑定；是唯二采集端的安装者</td></tr>
+    <tr><td>采集端（Windows / Android）</td><td>系统内的数据产生者，非人类角色</td><td>只能上传<b>自己设备</b>的数据，不能读取任何数据</td></tr>
+  </table>
+  <h3>核心对象</h3>
+  <table>
+    <tr><th>对象</th><th>定义</th><th>关键属性</th></tr>
+    <tr><td>设备</td><td>一台已绑定的电脑或手机；同一账号可绑定多台，个人使用不设数量上限 <span class="tag tbd">假设，待定</span></td><td>名称、类型（Windows/Android）、绑定状态、在线状态、最近上报时间</td></tr>
+    <tr><td>数据报告</td><td>采集端每 5 分钟上报的一个数据包</td><td>报告ID、设备、采集时间、指标集合</td></tr>
+    <tr><td>软件使用记录</td><td>Windows 端按报告周期聚合的前台软件时长</td><td>软件名、周期内前台秒数</td></tr>
+  </table>
+  <h3>设备在线状态</h3>
+  <table>
+    <tr><th>状态</th><th>判定</th><th>界面表现</th></tr>
+    <tr><td>在线</td><td>最近一次上报距今 ≤ 15 分钟（3 个推送周期）<span class="tag tbd">假设，待定</span></td><td>绿色"在线"，显示最新数据</td></tr>
+    <tr><td>离线</td><td>最近一次上报距今 &gt; 15 分钟</td><td>灰色"离线"，显示最后一次数据及其时间</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>4. 功能需求</h2>
+  <p>需求编号规则：A = Windows 采集端，B = Android App（采集 + 查看），C = 服务端。</p>
+
+  <div class="fr">
+    <h3>FR-A1 安装与绑定（Windows）</h3>
+    <ul>
+      <li><b>触发：</b>用户首次启动采集端。</li>
+      <li><b>规则：</b>未绑定时，采集端显示一个 6 位绑定码 <span class="tag tbd">格式假设，待定</span>，有效期 10 分钟，过期自动刷新；用户在手机 App"添加设备"中输入绑定码完成绑定。绑定成功后采集端进入采集状态，绑定码失效。</li>
+      <li><b>结果：</b>设备出现在 App 设备列表中；一个绑定码只能被一台设备使用一次；同一账号可重复执行本流程绑定多台电脑/手机，各设备令牌相互独立。</li>
+      <li><b>异常：</b>绑定码过期 → 提示刷新；重复绑定同一码 → 后一次失败并提示已使用。</li>
+    </ul>
+  </div>
+
+  <div class="fr">
+    <h3>FR-A2 数据采集内容（Windows）</h3>
+    <table>
+      <tr><th>类别</th><th>字段</th><th>口径</th></tr>
+      <tr><td>硬件参数</td><td>CPU 型号/核数/使用率、内存总量/已用、磁盘各分区总量/已用、GPU 型号/使用率、电池健康（有电池的机型）、显示器分辨率</td><td>使用率为采集瞬间值；机型不支持的字段留空，不伪造 <span class="tag tbd">假设</span></td></tr>
+      <tr><td>IP 地址信息</td><td>本机 IPv4（各网卡）、公网 IPv4、网卡 MAC</td><td>每次报告采集一次</td></tr>
+      <tr><td>开机时长</td><td>本次开机的累计运行秒数</td><td>自系统启动计时</td></tr>
+      <tr><td>前台软件使用时长</td><td>报告周期（5 分钟）内处于前台焦点的软件的累计前台秒数</td><td>一个周期通常只有 1 个软件；锁屏/无焦点记为"系统空闲"</td></tr>
+      <tr><td>网络流量</td><td>周期内全部网卡合计的发送字节数、接收字节数</td><td>按相邻两次累计值差计算</td></tr>
+    </table>
+  </div>
+
+  <div class="fr">
+    <h3>FR-A3 推送与补推（Windows）</h3>
+    <ul>
+      <li><b>规则：</b>每 5 分钟生成一份数据报告并推送；推送失败时报告写入本地缓存，按"共享规则-补推"执行。</li>
+      <li><b>结果：</b>服务器按报告 ID 幂等接收；App 中该设备"最近上报时间"更新。</li>
+    </ul>
+  </div>
+
+  <div class="fr">
+    <h3>FR-A4 后台运行与开关（Windows）</h3>
+    <ul>
+      <li>随系统登录自动启动，常驻托盘；托盘菜单提供：查看状态、暂停采集/恢复采集、退出。</li>
+      <li>暂停期间不采集、不推送；恢复后不补采暂停期间的数据（缺口如实呈现）。</li>
+      <li>开机时若未绑定，仍显示绑定码界面而非静默后台。</li>
+    </ul>
+  </div>
+
+  <div class="fr">
+    <h3>FR-B1 采集与推送（Android）</h3>
+    <ul>
+      <li><b>触发：</b>主人账号登录 App 后，App 默认开启"采集并上报本机"开关（可关闭）。其他手机作为采集端时，安装 App 并登录同一账号即可，无需绑定码 <span class="tag tbd">手机侧绑定方式假设，待定</span>。</li>
+      <li><b>内容：</b>电量/充电状态、内存总量/已用、存储总量/已用、网络类型（Wi-Fi/蜂窝）、本机 IPv4、公网 IPv4。</li>
+      <li><b>规则：</b>与 FR-A3 相同的 5 分钟推送与补推机制。</li>
+      <li><b>已知限制（已确认）：</b>不采用常驻前台通知；采集进程被系统杀掉时该时段即为数据缺口，不补采、不追溯，App 以"离线"状态如实呈现。</li>
+    </ul>
+  </div>
+
+  <div class="fr">
+    <h3>FR-B2 实时概览页（查看）</h3>
+    <ul>
+      <li><b>布局：</b>每台已绑定设备一张卡片：设备名、在线状态、最近上报时间、关键指标摘要（电脑：CPU/内存/磁盘使用率、今日开机时长；手机：电量、存储）。点入设备详情页看全量最新指标，电脑详情页含"今日各软件前台时长排行"。</li>
+      <li><b>刷新（已确认）：</b>所有数据每次实时从服务端拉取，App 本地不缓存业务数据；进入页面时拉取，页面内提供手动下拉刷新，无自动轮询。</li>
+      <li><b>空态：</b>尚无任何设备时显示引导"添加设备"流程。</li>
+    </ul>
+    <div class="wire">
+      <div class="phone">
+        <div class="t">概览</div>
+        <div class="card"><div class="mini"><span class="t">家里电脑</span><span class="on">● 在线</span></div>
+          <div class="mini"><span class="s">CPU 32% · 内存 61%</span></div>
+          <div class="mini"><span class="s">开机 4h 12m</span><span class="s">14:05</span></div></div>
+        <div class="card"><div class="mini"><span class="t">我的手机</span><span class="on">● 在线</span></div>
+          <div class="mini"><span class="s">电量 48% · 存储 72%</span></div>
+          <div class="mini"><span class="s">14:03</span></div></div>
+        <div class="card"><div class="mini"><span class="t">公司电脑</span><span class="off">● 离线</span></div>
+          <div class="mini"><span class="s">最后上报 12:55</span></div></div>
+        <div class="bar" style="width:60%"></div>
+      </div>
+      <p class="s" style="font-size:13px;color:var(--muted);max-width:280px;">线框示意：设备卡片 + 状态点 + 指标摘要 + 最近上报时间。绿=在线，灰=离线并显示最后一次数据时间。</p>
+    </div>
+  </div>
+
+  <div class="fr">
+    <h3>FR-B3 历史趋势</h3>
+    <ul>
+      <li><b>入口：</b>设备详情页内每个指标可展开趋势图。</li>
+      <li><b>规则：</b>时间范围三档：24 小时（5 分钟粒度）/ 7 天（1 小时聚合）/ 30 天（按天聚合）<span class="tag tbd">聚合粒度假设，待定</span>；软件使用时长以"按天 × 按软件"的堆叠或排行形式呈现。</li>
+      <li><b>空态：</b>所选范围内无数据点时显示"该时间段无数据"，不画零值。</li>
+    </ul>
+  </div>
+
+  <div class="fr">
+    <h3>FR-B4 数据导出</h3>
+    <ul>
+      <li><b>触发：</b>设备详情页"导出"入口。</li>
+      <li><b>流程：</b>选择指标（可多选）+ 时间范围（≤30 天）→ 生成 CSV → 调用系统分享/保存到文件。</li>
+      <li><b>规则：</b>CSV 列 = 时间戳 + 所选指标值；软件时长导出为"日期, 软件, 前台秒数"逐行记录。</li>
+      <li><b>异常：</b>生成失败 → 提示重试；范围内无数据 → 阻止导出并提示。</li>
+    </ul>
+  </div>
+
+  <div class="fr">
+    <h3>FR-C1 接收与鉴权（服务端）</h3>
+    <ul>
+      <li>传输全程 HTTP（2026-11-12 确认）：服务端部署于自用云服务器，采集端与查看端直连公网地址，不上 HTTPS，接受明文传输。每个报告必须携带设备令牌，令牌不符 → 整包拒绝。</li>
+      <li>按报告 ID 去重：重复上报只保留第一份。</li>
+      <li>字段缺失或类型非法的报告 → 拒绝并返回可诊断错误（仅本人可见日志）。</li>
+    </ul>
+  </div>
+
+  <div class="fr">
+    <h3>FR-C2 存储与保留</h3>
+    <ul>
+      <li>滚动保留 30 天：第 31 天前的原始数据自动删除。</li>
+      <li>聚合数据（小时/天）同样只保留 30 天，不延长保留（已确认）。</li>
+    </ul>
+  </div>
+
+  <div class="fr">
+    <h3>FR-C3 查询与账号</h3>
+    <ul>
+      <li>仅主人账号可查询与导出；App 首次启动用账号 + 密码登录 <span class="tag tbd">登录方式假设，待定</span>。</li>
+      <li>提供设备管理：重命名、解绑（解绑后该设备历史数据保留至自然过期，采集端立即失去上传资格）。</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>5. 共享规则</h2>
+  <h3>补推（两端通用）</h3>
+  <ul>
+    <li>断网期间报告存本地缓存，上限 7 天 <span class="tag tbd">假设，待定</span>；满后丢弃最旧。</li>
+    <li>网络恢复后按采集时间从旧到新补推；补推与实时报告同通道同鉴权。</li>
+  </ul>
+  <h3>时间</h3>
+  <ul>
+    <li>采集端记录采集时刻；服务器以接收时刻校验合理性（±24 小时外的报告拒绝 <span class="tag tbd">阈值假设</span>）；展示统一用东八区。</li>
+  </ul>
+  <h3>推送周期</h3>
+  <ul>
+    <li>固定 5 分钟，允许 ±30 秒随机错峰，避免两台设备同时请求。</li>
+  </ul>
+  <h3>安全边界</h3>
+  <ul>
+    <li>采集端只能写、不能读；只有 App（主人）能读。获得写资格的途径：Windows 采集端凭绑定码，Android 采集端凭主人账号登录。</li>
+  </ul>
+</section>
+
+<section>
+  <h2>6. 决策记录（2026-11-12 评审确认）</h2>
+  <ul>
+    <li>硬件字段扩展至 GPU、电池健康、显示器分辨率（Q1：需要）。</li>
+    <li>Android 不做常驻前台通知，进程被杀期间的数据不采（Q2）。</li>
+    <li>任何数据（含聚合）保留上限 30 天（Q3）。</li>
+    <li>不做主动告警推送（Q4）。</li>
+    <li>不做跨设备聚合视图（Q5）。</li>
+    <li>App 每次打开/刷新都实时从服务端拉取，本地不缓存业务数据。</li>
+    <li>Windows 采集端常驻后台运行（随登录自启、托盘常驻）。</li>
+    <li>传输全程 HTTP（2026-11-12 确认，不做 HTTPS，接受明文传输）；二期若上微信小程序，受平台规则约束需届时另行启用 HTTPS。</li>
+  </ul>
+</section>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>技术方案 · 个人信息采集与查看系统 V1</title>
+<style>
+  :root {
+    --text: #1f2328; --muted: #59636e; --border: #d1d9e0;
+    --surface: #ffffff; --bg: #f6f8fa; --brand: #0f7b3f; --brand-soft: #e6f4ec;
+    --warn-bg: #fff4e5; --warn-fg: #9a5b00;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.75 "PingFang SC", "Microsoft YaHei", system-ui, sans-serif; }
+  .page { max-width: 960px; margin: 0 auto; padding: 32px 20px 80px; }
+  header.doc { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 28px 32px; margin-bottom: 24px; }
+  h1 { font-size: 24px; margin: 0 0 8px; }
+  .meta { color: var(--muted); font-size: 13px; } .meta span { margin-right: 16px; }
+  section { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px 32px; margin-bottom: 20px; }
+  h2 { font-size: 19px; margin: 0 0 14px; padding-bottom: 8px; border-bottom: 2px solid var(--brand-soft); }
+  h3 { font-size: 16px; margin: 20px 0 8px; }
+  p { margin: 8px 0; } ul, ol { margin: 8px 0; padding-left: 24px; } li { margin: 4px 0; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 14px; }
+  th, td { border: 1px solid var(--border); padding: 7px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--bg); font-weight: 600; white-space: nowrap; }
+  code, pre { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; font: 13px/1.6 "JetBrains Mono", Consolas, monospace; }
+  code { padding: 1px 5px; }
+  pre { padding: 12px 16px; overflow-x: auto; }
+  .tag { display: inline-block; background: var(--brand-soft); color: var(--brand); border-radius: 4px; font-size: 12px; padding: 1px 8px; margin-right: 6px; font-weight: 600; }
+  .alt { background: var(--warn-bg); color: var(--warn-fg); }
+  .risk { background: var(--warn-bg); border-radius: 8px; padding: 10px 16px; font-size: 14px; margin: 10px 0; }
+  /* 架构图 */
+  .arch { display: flex; flex-direction: column; gap: 14px; margin: 16px 0; }
+  .arch .row { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  .arch .box { border: 1.5px solid var(--border); border-radius: 10px; background: var(--bg); padding: 12px 16px; min-width: 180px; text-align: center; }
+  .arch .box b { display: block; font-size: 15px; margin-bottom: 4px; }
+  .arch .box span { font-size: 12px; color: var(--muted); display: block; line-height: 1.5; }
+  .arch .server { border-color: var(--brand); background: var(--brand-soft); }
+  .arch .arrow { text-align: center; color: var(--muted); font-size: 13px; }
+  .arch .arrow b { color: var(--brand); }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="doc">
+  <h1>个人信息采集与查看系统 · 技术方案</h1>
+  <div class="meta">
+    <span>版本：V1.0（待确认）</span>
+    <span>日期：2026-11-12</span>
+    <span>对应 PRD：PRD_个人信息采集与查看系统.html（已定稿）</span>
+  </div>
+</header>
+
+<section>
+  <h2>0. 设计前提（来自 PRD 决策）</h2>
+  <ul>
+    <li>多台 Windows + 多台 Android 采集，单用户查看，5 分钟周期，任何数据保留 ≤30 天。</li>
+    <li>App 实时拉取、本地不缓存；Android 不做常驻通知，允许采集缺口。</li>
+    <li>传输全程 HTTP（2026-11-12 更新）：服务端部署于自用阿里云 ECS，采集端与查看端直连公网地址，不上 HTTPS；二期小程序受平台规则约束时再另行启用。</li>
+    <li>主数据库（2026-11-12 更新）：MySQL 8.0，复用服务器上已运行的 docker 容器；不引入 Redis。</li>
+    <li>开发者熟悉 Python，其余栈视为可学习的新栈。</li>
+  </ul>
+</section>
+
+<section>
+  <h2>1. 技术选型</h2>
+  <table>
+    <tr><th>组件</th><th>选型</th><th>理由</th></tr>
+    <tr><td>Windows 采集端</td><td>Python 3.11+ · psutil · pywin32 · pystray · PyInstaller</td><td>psutil 覆盖 CPU/内存/磁盘/网络/开机时长；pywin32 取前台窗口与显示器；PyInstaller 打包免安装 exe；全部在熟悉的 Python 栈内</td></tr>
+    <tr><td>GPU / 电池健康</td><td>pynvml（NVIDIA）/ WMI 电池 · wmi</td><td>PRD Q1 扩展字段；非 NVIDIA 机型 GPU 留空，符合"不支持字段留空"约定</td></tr>
+    <tr><td>公网 IP</td><td>外部 API（如 api.ipify.org）+ 本地缓存 30 分钟</td><td>避免每 5 分钟都打外部接口</td></tr>
+    <tr><td>服务端</td><td>Python FastAPI + Uvicorn + MySQL 8.0 + APScheduler</td><td>MySQL 8.0 <b>复用云服务器上已运行的 docker 容器</b>（2026-11-12 确认，替代原 SQLite 方案），顺带练真实数据库；个人规模（≤10 台设备 × 每天 288 报告 ≈ 3 千行/天）毫无压力；APScheduler 做 30 天清理与小时/天聚合。Redis 不引入（设计中无必须用它的场景）</td></tr>
+    <tr><td>传输协议</td><td>全程 HTTP：Uvicorn 监听 <code>0.0.0.0:8100</code>，两端直连云服务器（2026-11-12 确认，不做 HTTPS）</td><td>个人自用项目接受明文传输，省掉证书与反代环节；代码层用 base_url 配置，将来要上 HTTPS 仅改配置</td></tr>
+    <tr><td>Android 端</td><td><span class="tag alt">已确认</span>uni-app（Vue3）</td><td>一套代码做采集与查看 UI；uni API 覆盖电量/设备信息/网络状态，图表用 lime-echart；<b>二期微信小程序同一代码库直接编译</b>，与 PRD 二期规划天然衔接</td></tr>
+    <tr><td>Android 定时采集</td><td>uts/原生插件封装 Android AlarmManager，每 5 分钟拉起短时采集任务</td><td>WorkManager 最小周期 15 分钟不满足要求；uni-app 后台定时能力依赖原生插件，是 M3 的主要技术点；接受 Doze 模式下的缺口（PRD 已确认）</td></tr>
+    <tr><td>本地缓存（两端）</td><td>断网补推队列，7 天上限</td><td>Windows 端用 Python sqlite3；uni-app 端用 plus.sqlite 或 JSON 文件队列，容量小（最多 2016 条）</td></tr>
+  </table>
+  <div class="risk"><b>Android 端已确认使用 uni-app（Vue/JS）。</b>学习成本为 Vue 基础语法；最大收益是二期微信小程序复用同一代码库。需要重点验证的技术点：App 后台 5 分钟定时采集依赖原生插件，M3 第一周先做可行性验证（spike），若插件生态不满足再评估自写 uts 模块。</div>
+</section>
+
+<section>
+  <h2>2. 系统架构</h2>
+  <div class="arch">
+    <div class="row">
+      <div class="box"><b>Windows 采集端</b><span>psutil 采集 · 前台窗口计时<br>托盘常驻 · 本地补推队列<br>凭设备令牌上报</span></div>
+      <div class="box"><b>Android 采集/查看端（同一 App）</b><span>闹钟 5 分钟采集上报<br>登录主人账号后：查看 + 导出<br>本地不缓存业务数据</span></div>
+    </div>
+    <div class="arrow">▼ HTTP（全程）· JSON · 设备令牌 / JWT</div>
+    <div class="row">
+      <div class="box server"><b>云服务器（阿里云 ECS）</b><span>FastAPI（Uvicorn 直跑 HTTP:8100）<br>接收 API · 查询/导出 API · 绑定与登录<br>MySQL 8.0 · 30 天滚动 · APScheduler（聚合/清理）<br>安全组放行 TCP 8100</span></div>
+      <div class="box"><b>外部依赖</b><span>公网 IP 查询 API</span></div>
+    </div>
+  </div>
+  <p>服务端为<b>单体应用</b>，不拆微服务：个人项目规模下，一个 FastAPI 进程 + 一个 MySQL 库（服务器现有容器）即可承载全部职责，部署 = ECS 上一个常驻进程（systemd/nohup）。</p>
+</section>
+
+<section>
+  <h2>3. 数据协议</h2>
+  <h3>3.1 上报包（两端通用）</h3>
+  <pre>{
+  "report_id": "uuid-v4",          // 幂等去重键
+  "device_id": "dev_xxx",          // 绑定/登录后由服务器签发
+  "collected_at": 1731379500,      // 采集时刻，epoch 秒（东八区仅用于展示）
+  "metrics": {
+    // Windows 专有
+    "cpu": {"model": "...", "cores": 8, "percent": 32.1},
+    "mem": {"total": 17179869184, "used": 10485760000},
+    "disks": [{"name": "C:", "total": ..., "used": ...}],
+    "gpu": {"vendor": "nvidia", "model": "...", "percent": 15},  // 不支持则 null
+    "battery": {"health_percent": 87},   // 台式机/手机按实际
+    "display": {"resolution": "2560x1440"},
+    "net": {"sent_bytes": 123456, "recv_bytes": 654321},   // 周期增量
+    "ips": {"local": ["192.168.1.10"], "public": "x.x.x.x", "mac": ["..."]},
+    "uptime_seconds": 15120,
+    "foreground": {"app": "chrome.exe", "title_head": "...", "active_seconds": 298},
+    // Android 专有
+    "battery": {"level_percent": 48, "charging": false, "temp_c": 31.5},
+    "net_type": "wifi"
+  }
+}</pre>
+  <p>规则：<code>report_id</code> 重复 → 服务器只留第一份；<code>metrics</code> 中不支持的字段传 <code>null</code>，不得伪造；<code>foreground.active_seconds</code> 之和 ≤ 周期长度。</p>
+  <h3>3.2 API 一览</h3>
+  <table>
+    <tr><th>方法/路径</th><th>用途</th><th>鉴权</th></tr>
+    <tr><td><code>POST /v1/bindings</code></td><td>Windows 端申请绑定码（返回 6 位码 + 10 分钟有效）</td><td>无（限流：每 IP 每分钟 1 次）</td></tr>
+    <tr><td><code>POST /v1/bindings/{code}/claim</code></td><td>App 输入绑定码，为设备签发 <code>device_id + device_token</code></td><td>JWT（主人）</td></tr>
+    <tr><td><code>POST /v1/auth/login</code></td><td>主人账号登录，签发 JWT；Android 登录即自动注册本机为采集端</td><td>账号密码</td></tr>
+    <tr><td><code>POST /v1/reports</code></td><td>上报数据包（含补推，body 为数组支持批量）</td><td>device_token</td></tr>
+    <tr><td><code>GET /v1/devices</code></td><td>设备列表 + 在线状态 + 最近上报时间</td><td>JWT</td></tr>
+    <tr><td><code>GET /v1/devices/{id}/latest</code></td><td>最新一份完整指标（详情页）</td><td>JWT</td></tr>
+    <tr><td><code>GET /v1/devices/{id}/history?metric=&range=24h|7d|30d</code></td><td>趋势数据（24h 原始 / 7d 小时聚合 / 30d 天聚合）</td><td>JWT</td></tr>
+    <tr><td><code>GET /v1/devices/{id}/export?metrics=&from=&to=&format=csv</code></td><td>导出 ≤30 天数据，返回 CSV 文件流</td><td>JWT</td></tr>
+    <tr><td><code>DELETE /v1/devices/{id}</code></td><td>解绑设备（令牌立即失效，历史数据留至自然过期）</td><td>JWT</td></tr>
+  </table>
+  <h3>3.3 存储结构（MySQL 8.0）</h3>
+  <ul>
+    <li><code>devices(id, name, type, token_hash, bound_at, unbound_at)</code></li>
+    <li><code>reports(id, device_id, collected_at, payload_json)</code> —— 原始包整存，30 天删除</li>
+    <li><code>metrics_hourly / metrics_daily(device_id, bucket, key, value)</code> —— 由 APScheduler 滚动聚合，同样 30 天删除；趋势查询走聚合表，不扫原始表</li>
+    <li><code>bindings(code, device_pending, expires_at)</code>、<code>app_settings</code></li>
+  </ul>
+</section>
+
+<section>
+  <h2>4. 安全设计</h2>
+  <ul>
+    <li>传输全程 HTTP 明文（2026-11-12 用户确认接受，不做 HTTPS）；设备令牌 + 密码在公网明文传输，风险已知悉并接受。</li>
+    <li>数据库连接参数走环境变量，密码不进代码、不进 git；业务不用 root 账号，另建最小权限账号。MySQL/Redis 端口不对公网暴露（现为 <code>0.0.0.0</code>，部署时收敛为仅本机访问）。</li>
+    <li>设备令牌只存哈希；采集端令牌只有写权限，读接口一律 JWT。</li>
+    <li>单用户密码存 <code>argon2</code> 哈希；登录与绑定接口限流。</li>
+    <li>服务器时间校验：拒绝 <code>collected_at</code> 偏离接收时刻 ±24 小时的报告（PRD 假设值）。</li>
+  </ul>
+</section>
+
+<section>
+  <h2>5. 关键风险与对策</h2>
+  <table>
+    <tr><th>风险</th><th>影响</th><th>对策</th></tr>
+    <tr><td>Android 5 分钟精确闹钟在国产 ROM 上被省电策略压制</td><td>数据缺口比预期多</td><td>PRD 已接受缺口；App 内提供"自启动/电池优化白名单"引导页（仅引导，不强制）</td></tr>
+    <tr><td>前台窗口识别在 UAC 弹窗/全屏游戏下不准</td><td>软件时长偏差</td><td>取不到焦点时记为"系统空闲"，与 PRD 口径一致</td></tr>
+    <tr><td>公网 IP 外部 API 限流/不可用</td><td>IP 字段缺失</td><td>缓存 30 分钟 + 失败置 null，不阻塞整包上报</td></tr>
+    <tr><td>MySQL 容器/宿主机故障</td><td>丢历史数据（可容忍，30 天滚动）</td><td>每日 <code>mysqldump</code> 到同机备份目录，保留 7 份</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>6. MVP 迭代路径（每步都有可验证产物）</h2>
+  <ol>
+    <li><b>M1 打通链路：</b>FastAPI 服务端（接收+存储+latest 查询）+ Windows 采集端脚本版（无托盘，命令行跑）→ 用 curl 能查到电脑数据。<i>验收：一台电脑连续 1 小时每 5 分钟一条报告入库。</i></li>
+    <li><b>M2 采集端完善：</b>绑定码流程、PyInstaller 打包、托盘常驻、断网补推、GPU/电池/显示器字段。<i>验收：两台电脑完成绑定并同屏在线。</i></li>
+    <li><b>M3 Android 采集：</b>先做 uni-app 后台定时采集可行性验证（spike），再实现登录即采集上报（闹钟 5 分钟 + 本地队列）。<i>验收：手机数据出现在服务器，缺口符合预期。</i></li>
+    <li><b>M4 查看端：</b>概览页 + 详情页 + 趋势图（24h/7d/30d）+ 导出 CSV。<i>验收：完整走通 PRD 核心旅程。</i></li>
+  </ol>
+  <p>M1/M2 全程 Python，可以在学 uni-app/Vue 之前就拿到第一个可运行系统——这是刻意的顺序：先验证你最熟的端，再引入新栈。</p>
+</section>
+
+<section>
+  <h2>7. 决策记录</h2>
+  <p>Android 端框架：<b>uni-app（Vue3）</b>，2026-11-12 由需求方确认，不采用 Flutter/Kotlin。理由：查看端 UI 开发效率高 + 二期微信小程序复用同一代码库。</p>
+  <p>至此选型无未决项，可开工 M1。</p>
+</section>
+
+</div>
+</body>
+</html>

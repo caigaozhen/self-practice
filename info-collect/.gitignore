@@ -1,0 +1,33 @@
+# Trae 工具缓存/生成目录
+.screenshots/
+.trae-html-share-packages/
+.trae/
+
+# 敏感文件（开发令牌，绝不入库）
+dev_token.txt
+
+# 运行时数据（SQLite 库、本地队列、日志）
+*.db
+*.db-wal
+*.db-shm
+*.log
+logs/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# 打包产物
+build/
+dist/
+*.spec.bak
+
+# 编辑器/系统
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini
+.DS_Store
